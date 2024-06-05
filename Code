@@ -1,0 +1,73 @@
+#include <Adafruit_CircuitPlayground.h>
+
+float X, Y, Z, totalAccel;
+int totalAccel_min = 9.50;
+int totalAccel_max = 15;  
+const int NUMBER_OF_LEDS_ON_RING = 10;  // NeoPixels on Circuit Playground
+int ledbrightness = 25;              // Change this value to change the NeoPixel brightness 
+int led_brightness = 0;
+int led_brightness_min = 15;
+int led_brightness_max = 25;
+bool increasing = true; 
+  
+void setup() {
+  Serial.begin(9600);
+  CircuitPlayground.setBrightness(ledbrightness);
+  CircuitPlayground.clearPixels();
+  CircuitPlayground.begin();
+  CircuitPlayground.setAccelRange(LIS3DH_RANGE_8_G);
+}
+
+void loop() {
+  X = 0;
+  Y = 0;
+  Z = 0;
+  for (int i=0; i<10; i++) {
+    X += CircuitPlayground.motionX();
+    Y += CircuitPlayground.motionY();
+    Z += CircuitPlayground.motionZ();
+    delay(1);
+  }
+  X /= 10;
+  Y /= 10;
+  Z /= 10;
+
+  totalAccel = sqrt(X*X + Y*Y + Z*Z);
+
+  Serial.println(totalAccel);
+
+  delay(100);
+    if(increasing == true){
+    // increase brightness value
+    if(totalAccel > totalAccel_min){
+    led_brightness = led_brightness + 1;
+  }
+  else{
+    // decrease brightness value
+    led_brightness = led_brightness - 1; 
+    totalAccel = totalAccel_min;
+  }
+  }
+if(totalAccel > totalAccel_max){
+  // if maximum brightness reached, then start reducing brightness
+  if(led_brightness >= 255){
+    increasing = false;
+  }
+  // if minimum brightness reached, then start increasing brightness
+  else if(led_brightness <= 0){
+    increasing = true;
+    totalAccel = totalAccel_max;
+  }
+
+  // set the brightness of the led using the brightness value
+  analogWrite(NUMBER_OF_LEDS_ON_RING, led_brightness);
+  led_brightness = map(led_brightness, led_brightness_min, led_brightness_max, 0, 255);
+  for (int i = 0; i < 10; i++) {
+
+  CircuitPlayground.setPixelColor(i, 0, 0, led_brightness); 
+  }
+  increasing = false; 
+  // set a delay before changing brightness again
+  delay(5);
+}
+  }
